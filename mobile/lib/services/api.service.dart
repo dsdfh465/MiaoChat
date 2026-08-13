@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/api_config.dart';
+import '../models/asset.model.dart';
 import '../models/budget.model.dart';
 import '../models/transaction.model.dart';
 import '../models/user.model.dart';
@@ -170,6 +171,74 @@ class ApiService {
     );
     final Uint8List bytes = Uint8List.fromList(response.data as List<int>);
     return utf8.decode(bytes);
+  }
+
+  /// GET /asset-accounts
+  ///
+  /// [userId] 当前用户
+  /// [includeInactive] 是否包含停用账户
+  Future<AssetOverview> getAssetOverview(
+    String userId, {
+    bool includeInactive = false,
+  }) async {
+    setUserId(userId);
+    final Map<String, dynamic> data = await _getJson(
+      '/asset-accounts',
+      query: <String, dynamic>{
+        'include_inactive': includeInactive ? 'true' : 'false',
+      },
+    );
+    return AssetOverview.fromJson(data);
+  }
+
+  /// GET /asset-accounts/:id
+  ///
+  /// [userId] 当前用户
+  /// [accountId] 账户 UUID
+  Future<Map<String, dynamic>> getAssetAccountDetail(
+    String userId,
+    String accountId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    setUserId(userId);
+    return _getJson(
+      '/asset-accounts/$accountId',
+      query: <String, dynamic>{
+        'limit': limit,
+        'offset': offset,
+      },
+    );
+  }
+
+  /// POST /asset-accounts/:id/transactions
+  ///
+  /// [userId] 当前用户
+  /// [accountId] 账户 UUID
+  /// [amount] 金额（分）
+  /// [type] 流水类型
+  Future<void> recordAssetTransaction(
+    String userId,
+    String accountId, {
+    required int amount,
+    required String type,
+    String? category,
+    String? note,
+    int? shares,
+  }) async {
+    setUserId(userId);
+    await _guard(
+      () => _dio.post<dynamic>(
+        '/asset-accounts/$accountId/transactions',
+        data: <String, dynamic>{
+          'amount': amount,
+          'type': type,
+          if (category != null && category.isNotEmpty) 'category': category,
+          if (note != null && note.isNotEmpty) 'note': note,
+          if (shares != null) 'shares': shares,
+        },
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> _getJson(

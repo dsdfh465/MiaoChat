@@ -7,8 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/theme.dart';
+import '../models/asset.model.dart';
 import '../models/category.model.dart';
 import '../models/transaction.model.dart';
+import '../providers/asset.provider.dart';
+import '../providers/auth.provider.dart';
 import '../providers/transaction.provider.dart';
 import '../services/api.service.dart';
 import '../services/parser.service.dart';
@@ -179,10 +182,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _applyParsed(String text) {
+    unawaited(_applyParsedAsync(text));
+  }
+
+  Future<void> _applyParsedAsync(String text) async {
     final ParserService parser = ref.read(parserServiceProvider);
+    List<String> accountNames = <String>[];
+    List<AssetAccount> accounts = <AssetAccount>[];
+    try {
+      final AssetOverview overview = await ref.read(assetOverviewProvider.future);
+      accounts = overview.accounts;
+      accountNames = accounts.map((AssetAccount item) => item.name).toList();
+    } catch (_) {
+      // 资产接口不可用时退回日常记账
+    }
+
+    final ParsedAssetIntent? assetIntent = parser.parseAssetIntent(
+      text,
+      accountNames: accountNames,
+    );
+      if (assetIntent != null) {
+      AssetAccount? matched;
+      for (final AssetAccount account in accounts) {
+        final bool nameHit = account.name.contains(assetIntent.accountHint) ||
+            assetIntent.accountHint.contains(account.name);
+        final bool codeHit = assetIntent.stockCodeHint != null &&
+            account.stockCode == assetIntent.stockCodeHint;
+        if (nameHit || codeHit) {
+          matched = account;
+          break;
+        }
+      }
+      if (matched != null && assetIntent.amount > 0) {
+        try {
+          final String userId = ref.read(userIdProvider);
+          await ref.read(apiServiceProvider).recordAssetTransaction(
+                userId,
+                matched.id,
+                amount: assetIntent.amount,
+                type: assetIntent.transactionType,
+                category: assetIntent.category,
+                note: assetIntent.note,
+                shares: assetIntent.shares,
+              );
+          ref.invalidate(assetOverviewProvider);
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _chats.add(
+              _ChatEntry.user(
+                '已记入 ${matched!.name}：${assetIntent.transactionType} ¥${formatYuanFromFen(assetIntent.amount)}',
+              ),
+            );
+          });
+          _scrollToEnd();
+          showAppToast(context, '资产账户已更新');
+          return;
+        } on ApiException catch (error) {
+          if (mounted) {
+            showAppToast(context, error.message);
+          }
+          return;
+        } catch (_) {
+          if (mounted) {
+            showAppToast(context, '网络连接较慢，请重试');
+          }
+          return;
+        }
+      }
+      if (assetIntent.amount <= 0 && assetIntent.shares != null) {
+        // 仅股数场景仍提示未能识别金额以外的信息
+      }
+    }
+
     final ParsedTransaction? parsed = parser.parse(text);
     if (parsed == null) {
-      showAppToast(context, '未能识别金额，请重新说');
+      if (mounted) {
+        showAppToast(context, '未能识别金额，请重新说');
+      }
+      return;
+    }
+    if (!mounted) {
       return;
     }
     setState(() {

@@ -318,3 +318,67 @@ Content-Disposition: attachment; filename="miaochat_export_YYYY-MM-DD.csv"
 记账时间,分类,分类图标,金额（元）,备注,来源,确认状态,类型,交易ID
 
 金额以元显示、保留两位小数；按 `recorded_at` 倒序。无数据时仍返回表头，不报错。月份格式错误返回 `400` / `40004`。
+
+## 资产账户鉴权
+
+所有 `/api/v1/asset-accounts` 与 `/api/v1/credit-bills` 请求需携带 `x-user-id`。
+
+金额单位：分（整数）。`credit` 余额一般为负数（欠款）；总资产 = 各类型按规则汇总。
+
+错误码：`40005` 类型无效 · `40006` 余额不足 · `40007` 还款超限 · `40008` other 缺 is_positive · `40009` stock 缺 stock_code/market · `40404` 账户不存在 · `40405` 账单不存在 · `40901` 有流水不可删。
+
+## POST /api/v1/asset-accounts
+
+创建资产账户。`type`：`deposit` / `credit` / `fund` / `stock` / `other`。
+
+```json
+{
+  "name": "招商银行工资卡",
+  "type": "deposit",
+  "icon": "💳",
+  "initial_balance": 100000
+}
+```
+
+`other` 必须传 `is_positive`；`stock` 必须传 `stock_code`、`market`。
+
+## GET /api/v1/asset-accounts
+
+返回 `accounts`、`total_assets`、`total_assets_yuan`、`summary`（deposit/credit/fund/stock/other）。
+
+可选查询：`include_inactive=true|false`。
+
+## GET /api/v1/asset-accounts/:accountId
+
+账户详情 + 分页流水（`limit`/`offset`）。
+
+## POST /api/v1/asset-accounts/:accountId/transactions
+
+记录变动。`type`：`income` / `expense` / `interest` / `repayment` / `buy` / `sell` / `dividend`。股票买卖可附 `shares`。
+
+## DELETE /api/v1/asset-accounts/:accountId
+
+逻辑删除（`is_active=false`）。有流水返回 `40901`。
+
+## POST /api/v1/asset-accounts/:accountId/credit-bills
+
+```json
+{
+  "bill_month": "2026-08",
+  "total_amount": 300000,
+  "due_date": "2026-08-25"
+}
+```
+
+## GET /api/v1/asset-accounts/:accountId/credit-bills
+
+查询信用卡账单列表。
+
+## PUT /api/v1/credit-bills/:billId/repay
+
+```json
+{ "amount": 100000 }
+```
+
+还款超过未还金额返回 `40007`。
+

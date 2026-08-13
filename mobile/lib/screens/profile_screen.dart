@@ -8,8 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../config/theme.dart';
+import '../models/asset.model.dart';
 import '../models/user.model.dart';
+import '../providers/asset.provider.dart';
 import '../providers/auth.provider.dart';
+import '../routes/app_router.dart';
+import '../screens/asset_detail_screen.dart';
 import '../services/api.service.dart';
 import '../utils/formatters.dart';
 import '../utils/toast.dart';
@@ -130,6 +134,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           return Center(child: Text(message, style: AppTextStyles.body));
         },
         data: (User user) {
+          final AsyncValue<AssetOverview> assets = ref.watch(assetOverviewProvider);
           return ListView(
             padding: const EdgeInsets.all(AppDimens.spacingMd),
             children: <Widget>[
@@ -148,6 +153,71 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: AppDimens.spacingLg),
+              const Text('资产总览', style: AppTextStyles.title),
+              const SizedBox(height: AppDimens.spacingSm),
+              assets.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppDimens.spacingMd),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (Object error, StackTrace stack) {
+                  final String message =
+                      error is ApiException ? error.message : '网络连接较慢，请重试';
+                  return Text(message, style: AppTextStyles.caption);
+                },
+                data: (AssetOverview overview) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppDimens.spacingMd),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            '总资产 ¥${overview.totalAssetsYuan}',
+                            style: AppTextStyles.title,
+                          ),
+                          const SizedBox(height: AppDimens.spacingSm),
+                          Text(
+                            '存款 ${formatYuanFromFen(overview.summary['deposit'] ?? 0)} · '
+                            '信用卡 ${formatYuanFromFen(overview.summary['credit'] ?? 0)} · '
+                            '基金 ${formatYuanFromFen(overview.summary['fund'] ?? 0)}',
+                            style: AppTextStyles.caption,
+                          ),
+                          Text(
+                            '股票 ${formatYuanFromFen(overview.summary['stock'] ?? 0)} · '
+                            '其他 ${formatYuanFromFen(overview.summary['other'] ?? 0)}',
+                            style: AppTextStyles.caption,
+                          ),
+                          const SizedBox(height: AppDimens.spacingMd),
+                          if (overview.accounts.isEmpty)
+                            const Text('暂无资产账户', style: AppTextStyles.caption)
+                          else
+                            ...overview.accounts.map((AssetAccount account) {
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Text(account.icon),
+                                title: Text(account.name),
+                                subtitle: Text(assetTypeLabel(account.type)),
+                                trailing: Text('¥${account.balanceYuan}'),
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRouter.assetDetail,
+                                    arguments: AssetDetailArgs(
+                                      accountId: account.id,
+                                      title: account.name,
+                                    ),
+                                  );
+                                },
+                              );
+                            }),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: AppDimens.spacingLg),
               const Text('记账人格', style: AppTextStyles.title),

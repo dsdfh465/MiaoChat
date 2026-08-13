@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miaochat/main.dart';
+import 'package:miaochat/models/asset.model.dart';
 import 'package:miaochat/models/budget.model.dart';
 import 'package:miaochat/models/user.model.dart';
+import 'package:miaochat/providers/asset.provider.dart';
 import 'package:miaochat/providers/auth.provider.dart';
 import 'package:miaochat/providers/budget.provider.dart';
 import 'package:miaochat/providers/transaction.provider.dart';
@@ -28,6 +30,19 @@ const BudgetOverview _emptyBudget = BudgetOverview(
   categories: <Budget>[],
 );
 
+const AssetOverview _emptyAssets = AssetOverview(
+  accounts: <AssetAccount>[],
+  totalAssets: 0,
+  totalAssetsYuan: '0.00',
+  summary: <String, int>{
+    'deposit': 0,
+    'credit': 0,
+    'fund': 0,
+    'stock': 0,
+    'other': 0,
+  },
+);
+
 Widget _testApp() {
   return ProviderScope(
     overrides: <Override>[
@@ -36,6 +51,7 @@ Widget _testApp() {
       budgetProgressProvider.overrideWith(
         (Ref ref, String month) async => _emptyBudget,
       ),
+      assetOverviewProvider.overrideWith((Ref ref) async => _emptyAssets),
     ],
     child: const MyApp(),
   );
@@ -63,6 +79,8 @@ void main() {
     await tester.enterText(find.byType(TextField), '中午吃面花了25');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
 
     expect(find.text('滑动确认记账'), findsOneWidget);
     expect(find.textContaining('餐饮'), findsWidgets);
@@ -84,7 +102,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('13800138000'), findsOneWidget);
     expect(find.textContaining('注册时间'), findsOneWidget);
+    expect(find.text('资产总览'), findsOneWidget);
     expect(find.text('严师'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('导出数据'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pump();
     expect(find.text('导出数据'), findsOneWidget);
   });
 }

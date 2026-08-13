@@ -4,6 +4,8 @@ dist/
 *.log
 mobile/.dart_tool/
 mobile/build/
+mobile/android/build/
+mobile/android/.gradle/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 密钥存档.md

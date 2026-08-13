@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../screens/asset_detail_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/target_screen.dart';
@@ -14,6 +15,7 @@ class AppRouter {
   static const String home = '/';
   static const String target = '/target';
   static const String profile = '/profile';
+  static const String assetDetail = '/asset-detail';
 
   /// 根据 [settings.name] 返回对应 [MaterialPageRoute]
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -32,6 +34,18 @@ class AppRouter {
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (BuildContext context) => const ProfileScreen(),
+        );
+      case assetDetail:
+        final Object? args = settings.arguments;
+        final AssetDetailArgs detail = args is AssetDetailArgs
+            ? args
+            : const AssetDetailArgs(accountId: '', title: '资产详情');
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (BuildContext context) => AssetDetailScreen(
+            accountId: detail.accountId,
+            title: detail.title,
+          ),
         );
       default:
         return MaterialPageRoute<void>(
