@@ -1,0 +1,35 @@
+{
+  "name": "miaochat-backend",
+  "version": "1.0.0",
+  "description": "妙语记账后端服务",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "test": "node --require ts-node/register --test tests/health.test.ts tests/auth.test.ts tests/transaction.test.ts tests/budget.test.ts tests/budget-status.test.ts tests/user.test.ts tests/export.test.ts",
+    "db:ping": "ts-node src/scripts/test-connection.ts"
+  },
+  "keywords": [
+    "miaochat"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "ws": "^8.21.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0",
+    "@types/ws": "^8.18.1",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

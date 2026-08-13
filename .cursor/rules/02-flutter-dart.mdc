@@ -1,0 +1,40 @@
+---
+description: Flutter / Dart 硬性规范：Widget 类型、Riverpod、主题常量、mounted 检查、目录结构。
+globs: mobile/**/*.dart
+alwaysApply: false
+---
+
+# Flutter / Dart
+
+- Widget 必须是 `StatelessWidget` 或 `StatefulWidget`，禁止用 Function 构建 UI
+- 状态管理只使用 Riverpod，禁止混用 Provider / Bloc / GetX
+- 异步只用 `Future` / `async` / `await`，禁止回调地狱
+- 颜色、文字样式、间距必须定义为常量或主题（`config/theme.dart`），禁止硬编码数值
+- 使用 `BuildContext` 做异步后续操作前必须 `if (!mounted) return;`
+- 缩进 2 个空格
+- 文件顶部必须有文件头注释；公开函数必须有 `///` 文档注释
+- 禁止注释掉的死代码
+
+## 目录（强制）
+
+```
+mobile/lib/
+  main.dart
+  config/       # theme.dart, routes.dart
+  models/
+  providers/    # Riverpod
+  services/
+  screens/      # snake_case：home_screen.dart
+  widgets/
+  utils/
+```
+
+```dart
+/// 解析用户语音文本，提取金额、分类、日期
+///
+/// [text] 用户输入的语音转文字内容，如 "中午吃面花了25"
+/// 返回 [TransactionParseResult] 包含金额、分类、备注
+Future<TransactionParseResult> parseVoiceText(String text) async { ... }
+```
+
+性能目标：冷启动 < 3s；语音→记账全流程 < 3s；内存 < 80MB；本地 DB 查询 < 50ms；导出 1000 条 CSV < 2s。

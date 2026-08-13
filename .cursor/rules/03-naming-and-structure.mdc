@@ -1,0 +1,23 @@
+---
+description: 命名规范与前后端强制目录结构。新建文件必须落在规定目录并用规定命名。
+alwaysApply: true
+---
+
+# 命名与目录
+
+| 类型 | 规范 | 示例 |
+|---|---|---|
+| 文件名 TS/JS | kebab-case；分层文件用 `{entity}.{layer}.ts` | `user-service.ts` / `transaction.controller.ts` |
+| 文件名 Dart | snake_case | `home_screen.dart` |
+| 类名 | PascalCase | `UserController` |
+| 函数/变量 | camelCase | `getUserById` |
+| 常量 | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+| 数据库表名 | snake_case | `user_transactions` |
+| API 路径 | kebab-case | `/api/user-transactions` |
+
+后端根目录为 `backend/`，前端根目录为 `mobile/`。不要把业务代码堆在根目录。
+
+- 控制器不写 SQL / 不直连数据库，走 service → repository
+- 路由只做挂载，校验放 schema，鉴权放 middleware
+- Flutter 页面放 `screens/`，可复用 UI 放 `widgets/`，API/本地 DB 放 `services/`
+- 用户 ID 使用 UUID；API 响应时间 P95 < 500ms
