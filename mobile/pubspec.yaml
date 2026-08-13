@@ -16,11 +16,16 @@ dependencies:
   floor: ^1.4.2
   sqflite: ^2.3.0
   vosk_flutter: ^0.3.48
+  # vosk_flutter 约束 permission_handler ^10；release 构建需更高版本去掉 v1 embedding
   permission_handler: ^10.4.5
   path_provider: ^2.0.0
   go_router: ^13.0.0
   # 系统分享/保存导出 CSV（保留 UTF-8 BOM，Excel 中文不乱码）
   share_plus: ^10.0.0
+
+dependency_overrides:
+  permission_handler: ^12.0.1
+  permission_handler_android: ^13.0.1
 
 dev_dependencies:
   flutter_test:
